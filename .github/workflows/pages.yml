@@ -1,0 +1,53 @@
+# Publica la web del repositorio de contenido en la raiz del sitio personal:
+#   https://maaron00670.github.io/
+#
+# Este repositorio NO contiene el contenido de la web: solo lo despliega.
+# La fuente de verdad es maaron00670/Svalero-daw1-apps-and-tools-26-27
+# (la carpeta web/ de ese repositorio).
+
+name: Desplegar la web en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # permite publicarlo a mano desde la pestaña Actions
+  repository_dispatch: # lo dispara el repositorio de contenido en cada push
+    types: [publicar-web]
+  schedule:
+    # Red de seguridad: repasa el contenido cada hora por si se perdio alguna notificacion.
+    - cron: "23 * * * *"
+
+permissions:
+  contents: read # leer el repositorio de contenido
+  pages: write # subir el artefacto a Pages
+  id-token: write # token de despliegue
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Descargar el contenido
+        uses: actions/checkout@v7
+        with:
+          repository: maaron00670/Svalero-daw1-apps-and-tools-26-27
+          ref: main
+          path: origen
+
+      - name: Preparar Pages
+        uses: actions/configure-pages@v6
+
+      - name: Subir la web
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./origen/web
+
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v5
